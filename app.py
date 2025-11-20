@@ -336,14 +336,49 @@ def generate_motion_batch(
     status_msg = f"Processing {len(text_prompts)} prompts...\n"
     video_paths = []
     
-    for idx, (text, motion_length) in enumerate(text_prompts):
-        video_path, gen_msg = generate_motion_single(
-            text, motion_length, cfg_scale, use_auto_length, gpu_id, seed + idx
-        )
-        video_paths.append(video_path)
-        status_msg += f"\n[{idx+1}/{len(text_prompts)}] {gen_msg}\n"
+    # Create a persistent directory for batch videos (not temp, so Gradio can access them)
+    batch_output_dir = pjoin('generation', 'batch_temp')
+    os.makedirs(batch_output_dir, exist_ok=True)
     
-    return video_paths, status_msg
+    for idx, (text, motion_length) in enumerate(text_prompts):
+        try:
+            video_path, gen_msg = generate_motion_single(
+                text, motion_length, cfg_scale, use_auto_length, gpu_id, seed + idx
+            )
+            
+            # If video was created, copy it to persistent location for batch gallery
+            if video_path and os.path.exists(video_path):
+                # Create a unique filename for this batch item
+                batch_video_path = pjoin(batch_output_dir, f'motion_{idx:04d}{os.path.splitext(video_path)[1]}')
+                
+                # Copy file to persistent location
+                import shutil
+                shutil.copy2(video_path, batch_video_path)
+                
+                # Verify the copied file exists
+                if os.path.exists(batch_video_path):
+                    video_paths.append(batch_video_path)
+                    status_msg += f"\n[{idx+1}/{len(text_prompts)}] ✓ {text[:50]}... - Video saved"
+                else:
+                    status_msg += f"\n[{idx+1}/{len(text_prompts)}] ⚠ {text[:50]}... - Video copy failed"
+                    video_paths.append(None)
+            else:
+                status_msg += f"\n[{idx+1}/{len(text_prompts)}] ❌ {text[:50]}... - Generation failed"
+                video_paths.append(None)
+                
+        except Exception as e:
+            status_msg += f"\n[{idx+1}/{len(text_prompts)}] ❌ Error: {str(e)}"
+            video_paths.append(None)
+    
+    # Filter out None values - Gradio Gallery doesn't handle None well
+    valid_video_paths = [path for path in video_paths if path is not None and os.path.exists(path)]
+    
+    if len(valid_video_paths) == 0:
+        status_msg += "\n\n❌ No videos were successfully generated."
+    else:
+        status_msg += f"\n\n✓ Successfully generated {len(valid_video_paths)}/{len(text_prompts)} motions."
+    
+    return valid_video_paths, status_msg
 
 
 # Gradio Interface
