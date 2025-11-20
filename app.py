@@ -337,8 +337,12 @@ def generate_motion_batch(
     video_paths = []
     
     # Create a persistent directory for batch videos (not temp, so Gradio can access them)
+    # Use a directory that Gradio can serve from
     batch_output_dir = pjoin('generation', 'batch_temp')
     os.makedirs(batch_output_dir, exist_ok=True)
+    
+    # Also ensure the parent directory exists
+    os.makedirs('generation', exist_ok=True)
     
     for idx, (text, motion_length) in enumerate(text_prompts):
         try:
@@ -349,36 +353,99 @@ def generate_motion_batch(
             # If video was created, copy it to persistent location for batch gallery
             if video_path and os.path.exists(video_path):
                 # Create a unique filename for this batch item
-                batch_video_path = pjoin(batch_output_dir, f'motion_{idx:04d}{os.path.splitext(video_path)[1]}')
+                # Get file extension from original path
+                file_ext = os.path.splitext(video_path)[1] or '.mp4'
+                batch_video_path = pjoin(batch_output_dir, f'motion_{idx:04d}{file_ext}')
                 
                 # Copy file to persistent location
                 import shutil
-                shutil.copy2(video_path, batch_video_path)
-                
-                # Verify the copied file exists
-                if os.path.exists(batch_video_path):
-                    video_paths.append(batch_video_path)
-                    status_msg += f"\n[{idx+1}/{len(text_prompts)}] ✓ {text[:50]}... - Video saved"
-                else:
-                    status_msg += f"\n[{idx+1}/{len(text_prompts)}] ⚠ {text[:50]}... - Video copy failed"
+                try:
+                    shutil.copy2(video_path, batch_video_path)
+                    
+                    # Verify the copied file exists
+                    if os.path.exists(batch_video_path):
+                        # Use relative path for Gradio (works better in HuggingFace Spaces)
+                        # Gradio can serve files from relative paths within the app directory
+                        video_paths.append(batch_video_path)
+                        file_size = os.path.getsize(batch_video_path)
+                        status_msg += f"\n[{idx+1}/{len(text_prompts)}] ✓ {text[:50]}... - Video saved ({file_size/1024:.1f} KB)"
+                    else:
+                        status_msg += f"\n[{idx+1}/{len(text_prompts)}] ⚠ {text[:50]}... - Video copy failed (file not found after copy)"
+                        video_paths.append(None)
+                except Exception as copy_error:
+                    status_msg += f"\n[{idx+1}/{len(text_prompts)}] ⚠ {text[:50]}... - Copy error: {str(copy_error)}"
                     video_paths.append(None)
             else:
-                status_msg += f"\n[{idx+1}/{len(text_prompts)}] ❌ {text[:50]}... - Generation failed"
+                status_msg += f"\n[{idx+1}/{len(text_prompts)}] ❌ {text[:50]}... - Generation failed (no video path returned)"
                 video_paths.append(None)
                 
         except Exception as e:
             status_msg += f"\n[{idx+1}/{len(text_prompts)}] ❌ Error: {str(e)}"
+            import traceback
+            status_msg += f"\n   Traceback: {traceback.format_exc()[:200]}"
             video_paths.append(None)
     
-    # Filter out None values - Gradio Gallery doesn't handle None well
-    valid_video_paths = [path for path in video_paths if path is not None and os.path.exists(path)]
+    # Filter out None values and verify files exist - Gradio Gallery needs valid paths
+    valid_video_paths = []
+    for path in video_paths:
+        if path is not None:
+            # Use relative path (Gradio handles these better in cloud environments)
+            # Verify file exists
+            if os.path.exists(path):
+                # Verify it's a video file
+                if path.lower().endswith(('.mp4', '.gif', '.mov', '.avi')):
+                    # Get file size for debugging
+                    file_size = os.path.getsize(path)
+                    if file_size > 0:  # Ensure file is not empty
+                        valid_video_paths.append(path)  # Keep relative path
+                        status_msg += f"\n  ✓ Verified: {os.path.basename(path)} ({file_size/1024:.1f} KB)"
+                    else:
+                        status_msg += f"\n  ⚠ Empty file: {path}"
+                else:
+                    status_msg += f"\n  ⚠ Skipping non-video file: {path}"
+            else:
+                # Try absolute path as fallback
+                abs_path = os.path.abspath(path)
+                if os.path.exists(abs_path):
+                    valid_video_paths.append(abs_path)
+                    status_msg += f"\n  ✓ Found via absolute path: {abs_path}"
+                else:
+                    status_msg += f"\n  ⚠ File not found (relative: {path}, absolute: {abs_path})"
     
     if len(valid_video_paths) == 0:
-        status_msg += "\n\n❌ No videos were successfully generated."
+        status_msg += "\n\n❌ No videos were successfully generated for the gallery."
+        status_msg += "\n💡 Check the error messages above for each prompt."
+        # Return empty list explicitly
+        return [], status_msg
     else:
-        status_msg += f"\n\n✓ Successfully generated {len(valid_video_paths)}/{len(text_prompts)} motions."
+        status_msg += f"\n\n✅ Successfully generated {len(valid_video_paths)}/{len(text_prompts)} motions."
+        status_msg += f"\n📁 Videos saved in: {batch_output_dir}"
+        status_msg += f"\n📋 Gallery will display {len(valid_video_paths)} video(s)."
+        
+        # Debug: Show first few paths
+        status_msg += f"\n\n🎬 First few video paths:\n"
+        for i, p in enumerate(valid_video_paths[:3]):
+            abs_p = os.path.abspath(p) if not os.path.isabs(p) else p
+            exists = "✓" if os.path.exists(p) else "✗"
+            status_msg += f"  {exists} [{i+1}] {p} (exists: {os.path.exists(p)})\n"
+        if len(valid_video_paths) > 3:
+            status_msg += f"  ... and {len(valid_video_paths) - 3} more\n"
     
-    return valid_video_paths, status_msg
+    # Return list of file paths (Gradio Gallery expects list of strings)
+    # Ensure all paths are valid and accessible
+    final_paths = []
+    for p in valid_video_paths:
+        if os.path.exists(p):
+            # Normalize path (use forward slashes for cross-platform compatibility)
+            normalized_path = p.replace('\\', '/')
+            final_paths.append(normalized_path)
+        else:
+            status_msg += f"\n⚠ Warning: Path not found when returning: {p}"
+    
+    if len(final_paths) != len(valid_video_paths):
+        status_msg += f"\n⚠ Some paths were filtered out. Returning {len(final_paths)}/{len(valid_video_paths)} videos."
+    
+    return final_paths, status_msg
 
 
 # Gradio Interface
@@ -529,7 +596,8 @@ def create_interface():
                             elem_id="gallery",
                             columns=2,
                             rows=2,
-                            height="auto"
+                            height="auto",
+                            type="filepath"  # Explicitly specify filepath type
                         )
                 
                 batch_generate_btn.click(
