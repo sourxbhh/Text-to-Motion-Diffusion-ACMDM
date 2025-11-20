@@ -1,0 +1,30 @@
+# Requirements for HuggingFace Spaces Deployment
+# This file is used by HuggingFace Spaces to install dependencies
+
+# Core ML libraries
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.21.0
+scipy>=1.7.0
+
+# Gradio for web interface
+gradio>=4.0.0
+
+# CLIP for text encoding
+git+https://github.com/openai/CLIP.git
+
+# Additional dependencies
+einops>=0.6.0
+timm>=0.6.0
+tqdm>=4.64.0
+matplotlib>=3.5.0
+opencv-python>=4.6.0
+Pillow>=9.0.0
+
+# For model loading and processing
+h5py>=3.7.0
+scikit-learn>=1.0.0
+
+# Utilities
+gdown>=4.6.0
+
