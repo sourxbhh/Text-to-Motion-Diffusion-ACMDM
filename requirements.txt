@@ -21,9 +21,18 @@ matplotlib>=3.5.0
 opencv-python>=4.6.0
 Pillow>=9.0.0
 
+# ODE/SDE solvers for diffusion
+torchdiffeq>=0.2.5
+
+# Vector quantization
+vector-quantize-pytorch>=1.0.0
+
 # For model loading and processing
 h5py>=3.7.0
 scikit-learn>=1.0.0
+
+# Body model dependencies
+chumpy>=0.70
 
 # Utilities
 gdown>=4.6.0
