@@ -109,8 +109,10 @@ class ACMDM(nn.Module):
 
     def load_and_freeze_clip(self, clip_version):
         clip_model, clip_preprocess = clip.load(clip_version, device='cpu', jit=False)
-        assert torch.cuda.is_available()
-        clip.model.convert_weights(clip_model)
+        # Convert weights to half precision if CUDA is available (for efficiency)
+        # If CUDA is not available, skip conversion (works on CPU with float32)
+        if torch.cuda.is_available():
+            clip.model.convert_weights(clip_model)
 
         clip_model.eval()
         for p in clip_model.parameters():
