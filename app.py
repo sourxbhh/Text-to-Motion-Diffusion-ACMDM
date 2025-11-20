@@ -251,20 +251,41 @@ def generate_motion_single(
         
         # Create temporary file for video
         temp_dir = tempfile.mkdtemp()
+        os.makedirs(temp_dir, exist_ok=True)
         video_path = pjoin(temp_dir, 'motion.mp4')
         
-        # Generate video
-        plot_3d_motion(
-            video_path,
-            t2m_kinematic_chain,
-            joints,
-            title=text,
-            fps=20,
-            radius=4
-        )
+        # Generate video - plot_3d_motion returns the actual path (may be .mp4 or .gif)
+        try:
+            actual_video_path = plot_3d_motion(
+                video_path,
+                t2m_kinematic_chain,
+                joints,
+                title=text,
+                fps=20,
+                radius=4
+            )
+        except Exception as e:
+            status_msg += f"\n⚠ Error in plot_3d_motion: {str(e)}"
+            raise
         
-        status_msg += "✓ Motion generated successfully!"
-        return video_path, status_msg
+        # Verify file exists - check both the returned path and original path
+        if not os.path.exists(actual_video_path):
+            # Check if file exists with original path
+            if os.path.exists(video_path):
+                actual_video_path = video_path
+            # Check if it was saved as GIF instead
+            elif os.path.exists(video_path.replace('.mp4', '.gif')):
+                actual_video_path = video_path.replace('.mp4', '.gif')
+            else:
+                # List files in temp directory for debugging
+                files_in_dir = os.listdir(temp_dir) if os.path.exists(temp_dir) else []
+                error_msg = f"Video file not found. Expected: {actual_video_path}\n"
+                error_msg += f"Files in temp directory: {files_in_dir}"
+                status_msg += f"\n❌ {error_msg}"
+                raise FileNotFoundError(error_msg)
+        
+        status_msg += f"\n✓ Motion generated successfully! Video saved."
+        return actual_video_path, status_msg
         
     except Exception as e:
         error_msg = f"Error generating motion: {str(e)}"
