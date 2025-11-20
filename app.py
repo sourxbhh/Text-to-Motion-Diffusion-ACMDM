@@ -5,7 +5,14 @@ Milestone 3: User-friendly web interface for text-to-motion generation
 
 import os
 import sys
-from os.path import join as pjoin
+from os.path import join as pjoin, dirname, abspath
+
+# Add current directory to Python path for HuggingFace Spaces
+# This ensures models/ and utils/ can be imported
+current_dir = dirname(abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 import torch
 import numpy as np
 import gradio as gr
@@ -13,7 +20,7 @@ from typing import Optional, Tuple, List
 import tempfile
 import random
 
-# Import from sample.py
+# Import from models and utils
 from models.AE_2D_Causal import AE_models
 from models.ACMDM import ACMDM_models
 from models.LengthEstimator import LengthEstimator
