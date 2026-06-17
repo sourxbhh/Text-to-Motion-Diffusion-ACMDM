@@ -66,19 +66,6 @@ This space uses pre-trained ACMDM models:
 - GPU recommended for best performance
 - Works on CPU but slower
 
----
-title: ACMDM Motion Generation
-emoji: 🎭
-colorFrom: blue
-colorTo: purple
-sdk: gradio
-sdk_version: 4.0.0
-app_file: app.py
-pinned: false
-license: mit
-hardware: gpu-t4-small
----
-
 
 ## 🔗 Links
 
