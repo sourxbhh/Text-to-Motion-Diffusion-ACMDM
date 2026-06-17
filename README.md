@@ -12,9 +12,11 @@ Generate human motion animations from text descriptions using the ACMDM (Absolut
 
 ## Results
 
-<img width="581" height="650" alt="image" src="https://github.com/user-attachments/assets/af3e8503-b417-481d-b94b-2322a998c632" />
-<img width="581" height="650" alt="image" src="https://github.com/user-attachments/assets/42ef7545-e3be-4715-856b-f1c4ee84ab60" />
-<img width="581" height="650" alt="image" src="https://github.com/user-attachments/assets/7bd0f379-9300-4bf7-9530-800e5f768364" />
+<img width="372" height="415" alt="Image" src="https://github.com/user-attachments/assets/267a41bc-debd-44d0-9c21-a4587264238a" />
+
+<img width="371" height="415" alt="Image" src="https://github.com/user-attachments/assets/74a1f96e-2f1d-406b-8772-c50c26c6230c" />
+
+<img width="372" height="415" alt="Image" src="https://github.com/user-attachments/assets/db2da740-3f63-4897-a7a5-dadeb3a9eeec" />
 
 ## 🚀 Usage
 
