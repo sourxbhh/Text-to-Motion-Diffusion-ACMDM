@@ -1,16 +1,3 @@
----
-title: ACMDM Motion Generation
-emoji: 🎭
-colorFrom: blue
-colorTo: purple
-sdk: gradio
-sdk_version: 4.0.0
-app_file: app.py
-pinned: false
-license: mit
-hardware: gpu-t4-small
----
-
 # ACMDM Motion Generation
 
 Generate human motion animations from text descriptions using the ACMDM (Absolute Coordinates Make Motion Generation Easy) model.
@@ -22,6 +9,12 @@ Generate human motion animations from text descriptions using the ACMDM (Absolut
 - **Auto-Length Estimation**: AI automatically determines optimal motion length
 - **Flexible Parameters**: Adjust CFG scale, motion length, and more
 - **Real-time Preview**: See your generated motions instantly
+
+## Results
+
+<img width="581" height="650" alt="image" src="https://github.com/user-attachments/assets/af3e8503-b417-481d-b94b-2322a998c632" />
+<img width="581" height="650" alt="image" src="https://github.com/user-attachments/assets/42ef7545-e3be-4715-856b-f1c4ee84ab60" />
+<img width="581" height="650" alt="image" src="https://github.com/user-attachments/assets/7bd0f379-9300-4bf7-9530-800e5f768364" />
 
 ## 🚀 Usage
 
@@ -74,6 +67,20 @@ This space uses pre-trained ACMDM models:
 - Subsequent generations are faster (5-15 seconds)
 - GPU recommended for best performance
 - Works on CPU but slower
+
+---
+title: ACMDM Motion Generation
+emoji: 🎭
+colorFrom: blue
+colorTo: purple
+sdk: gradio
+sdk_version: 4.0.0
+app_file: app.py
+pinned: false
+license: mit
+hardware: gpu-t4-small
+---
+
 
 ## 🔗 Links
 
